@@ -23,7 +23,7 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 	make -C $(LIBFT_DIR) fclean
-	@echo "fclean reussi"
+	@echo "fclean was succesfull"
 
 re: fclean all
 
