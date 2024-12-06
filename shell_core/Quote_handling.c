@@ -6,7 +6,7 @@
 /*   By: fsilva-p <fsilva-p@42luxembourg.lu>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/06 16:09:56 by fsilva-p          #+#    #+#             */
-/*   Updated: 2024/12/06 17:50:07 by fsilva-p         ###   ########.fr       */
+/*   Updated: 2024/12/06 19:05:38 by fsilva-p         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ void single_quotes(char *symbol)
 
 int main()
 {
-	char test1[] = "'Hello World\n^$%@%$&*%*'";
+	char test1[] = "'Hello World\n^$%@%$&*%*./,,,'";
 	single_quotes(test1);
 	printf("\n");
 }
