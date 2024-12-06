@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -Werror
 LIBFT_DIR = libft
 LIBFT = $(LIBFT_DIR)/libft.a
 
-SRCS =	
+SRCS =	./shell_core/Quote_handling.c\
 
 OBJS = $(SRCS:.c=.o)
 

@@ -10,9 +10,10 @@
 # include <sys/wait.h>
 # include <readline/readline.h>
 # include <readline/history.h>
+# include "../libft/libft.h"
 
 
-
+void single_quotes(char *symbol);
 
 
 
