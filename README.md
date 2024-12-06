@@ -29,8 +29,13 @@ Ctrl-D: Exit the shell.
 Built-in Commands:
 echo with -n option.
 cd with relative or absolute paths.
+
 pwd (print working directory).
+
 export (export environment variables).
+
 unset (unset environment variables).
+
 env (display environment variables).
+
 exit (exit the shell).
