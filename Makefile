@@ -5,17 +5,7 @@ CFLAGS = -Wall -Wextra -Werror
 LIBFT_DIR = libft
 LIBFT = $(LIBFT_DIR)/libft.a
 
-SRCS =	main.c \
-		executor.c \
-		signal.c \
-		parsing/parser.c \
-		builtin/ft_cd.c \
-		builtin/ft_echo.c \
-		builtin/ft_env.c \
-		builtin/ft_exit.c \
-		builtin/ft_export.c \
-		builtin/ft_pwd.c \
-		builtin/ft_unset.c
+SRCS =	
 
 OBJS = $(SRCS:.c=.o)
 
