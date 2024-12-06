@@ -1,4 +1,3 @@
-# Variables
 NAME = minishell
 CC = cc
 CFLAGS = -Wall -Wextra -Werror
@@ -9,7 +8,6 @@ SRCS =
 
 OBJS = $(SRCS:.c=.o)
 
-# Règles
 all: $(NAME)
 
 $(NAME): $(OBJS) $(LIBFT)
