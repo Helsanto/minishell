@@ -6,7 +6,7 @@
 /*   By: fsilva-p <fsilva-p@42luxembourg.lu>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/06 16:09:56 by fsilva-p          #+#    #+#             */
-/*   Updated: 2024/12/09 15:37:46 by fsilva-p         ###   ########.fr       */
+/*   Updated: 2024/12/09 18:47:07 by fsilva-p         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,6 @@ void single_quotes(char *symbol)
 		}
 	}
 }
-
 /*int main()
 {
 	char test1[] = "'Hello World\n^$%@%$&*%*./,,,\t'";
