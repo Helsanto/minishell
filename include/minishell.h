@@ -25,7 +25,7 @@
 void single_quotes(char *symbol);
 void handle_dollarsign(char *symbol, int *i, int len);
 void double_quotes(char *symbol);
-int redirect_right(const char *filename);
+int redirect_input(const char *filename);
 
 
 #endif
