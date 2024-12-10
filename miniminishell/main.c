@@ -30,7 +30,7 @@ int main(int argc, char **argv, char **envp)
         fprintf(stderr, "Failed to initialize environment\n");
         return 1;
     }
-
+				print_banner();
     while (1)
     {
         input = readline("myshell> ");

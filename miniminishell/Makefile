@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -I.
-SRCS = main.c parser.c command.c expand.c env.c builtins.c
+SRCS = main.c parser.c command.c expand.c env.c builtins.c print_banner.c
 OBJS = $(SRCS:.c=.o)
 NAME = minishell
 

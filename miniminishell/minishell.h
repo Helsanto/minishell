@@ -97,4 +97,7 @@ t_command *parse_input_into_commands(const char *input);
 /* Fonction de parsing avancée */
 t_command *parse_input_into_commands(const char *input);
 
+/*print banner */
+void print_banner();
+
 #endif
