@@ -12,116 +12,89 @@
 
 #include "minishell.h"
 
-static char	*add_char_to_token(char *token, char c)
+static bool	handle_quotes_and_spaces(char c, t_quote_state *quote_state,
+					char **current_token, char ***args)
 {
-	size_t	len;
-	char	*new_token;
-
-	if (!token)
+	if (c == '\'' && !(quote_state->in_double_quotes))
 	{
-		new_token = malloc(2 * sizeof(char));
-		if (!new_token)
-			return (NULL);
-		new_token[0] = c;
-		new_token[1] = '\0';
-		return (new_token);
+		quote_state->in_single_quotes = !(quote_state->in_single_quotes);
+		return (true);
 	}
-	len = strlen(token);
-	new_token = malloc((len + 2) * sizeof(char));
-	if (!new_token)
+	if (c == '\"' && !(quote_state->in_single_quotes))
 	{
-		free(token);
-		return (NULL);
+		quote_state->in_double_quotes = !(quote_state->in_double_quotes);
+		return (true);
 	}
-	strcpy(new_token, token);
-	new_token[len] = c;
-	new_token[len + 1] = '\0';
-	free(token);
-	return (new_token);
-}
-
-static char	**add_token_to_array(char **array, char *token)
-{
-	int		count = 0;
-	char	**new_array;
-	int		i;
-
-	if (!token)
-		return (array);
-	while (array && array[count])
-		count++;
-	new_array = malloc((count + 2) * sizeof(char *));
-	if (!new_array)
+	if ((c == ' ' || c == '\t') && !(quote_state->in_single_quotes)
+		&& !(quote_state->in_double_quotes))
 	{
-		if (array)
+		if (*current_token)
 		{
-			i = 0;
-			while (array[i])
-				free(array[i++]);
-			free(array);
+			*args = add_token_to_array(*args, *current_token);
+			*current_token = NULL;
 		}
-		free(token);
-		return (NULL);
+		return (true);
 	}
-	for (int i = 0; i < count; i++)
-		new_array[i] = array[i];
-	new_array[count] = token;
-	new_array[count + 1] = NULL;
-	free(array);
-	return (new_array);
+	return (false);
 }
 
+static char	*handle_token(char *current_token, char c, char ***args)
+{
+	int	j;
+
+	current_token = add_char_to_token(current_token, c);
+	if (!current_token)
+	{
+		if (*args)
+		{
+			j = 0;
+			while ((*args)[j])
+			{
+				free((*args)[j]);
+				j++;
+			}
+			free(*args);
+		}
+		return (NULL);
+	}
+	return (current_token);
+}
+
+static void	init_parse_state(t_quote_state *quote_state,
+				char ***args, char **current_token)
+{
+	quote_state->in_single_quotes = false;
+	quote_state->in_double_quotes = false;
+	*args = NULL;
+	*current_token = NULL;
+}
+
+static bool	process_line_char(char c, t_quote_state *quote_state,
+					char **current_token, char ***args)
+{
+	if (handle_quotes_and_spaces(c, quote_state, current_token, args))
+		return (true);
+	*current_token = handle_token(*current_token, c, args);
+	if (!(*current_token))
+		return (false);
+	return (true);
+}
 
 char	**parse_line(char *line)
 {
-	bool	in_single_quotes = false;
-	bool	in_double_quotes = false;
-	char	**args = NULL;
-	char	*current_token = NULL;
-	char	c;
-	int		i;
-	int		j;
+	t_quote_state	quote_state;
+	char			**args;
+	char			*current_token;
+	int				i;
 
 	if (!line)
 		return (NULL);
+	init_parse_state(&quote_state, &args, &current_token);
 	i = 0;
 	while (line[i])
 	{
-		c = line[i];
-		if (c == '\'' && !in_double_quotes)
-		{
-			in_single_quotes = !in_single_quotes;
-			i++;
-			continue;
-		}
-		if (c == '\"' && !in_single_quotes)
-		{
-			in_double_quotes = !in_double_quotes;
-			i++;
-			continue;
-		}
-		if ((c == ' ' || c == '\t') && !in_single_quotes && !in_double_quotes)
-		{
-			if (current_token)
-			{
-				args = add_token_to_array(args, current_token);
-				current_token = NULL;
-			}
-			i++;
-			continue;
-		}
-		current_token = add_char_to_token(current_token, c);
-		if (!current_token)
-		{
-			if (args)
-			{
-				j = 0;
-				while (args[j])
-					free(args[j++]);
-				free(args);
-			}
+		if (!process_line_char(line[i], &quote_state, &current_token, &args))
 			return (NULL);
-		}
 		i++;
 	}
 	if (current_token)

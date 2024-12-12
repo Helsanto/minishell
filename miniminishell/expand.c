@@ -11,155 +11,101 @@
 /* ************************************************************************** */
 
 #include "minishell.h"
-#include <ctype.h>
 
-/* *** Variables Globales *** */
-extern int          g_last_exit_code;
-extern t_env        *g_env_list; // Liste chaînée des variables d'environnement
-
-static char	*get_return_value(void)
+static char	*expand_variable(const char **p)
 {
-    // Convertir le code de retour en chaîne de caractères
-    char buffer[12]; // Suffisant pour un entier 32 bits
-    int len = snprintf(buffer, sizeof(buffer), "%d", g_last_exit_code);
-    if (len < 0)
-        return strdup("0"); // En cas d'erreur, retourner "0"
+	char		*ret;
+	const char	*start;
+	size_t		var_len;
+	const char	*val;
 
-    char *ret_str = strdup(buffer);
-    if (!ret_str)
-        return strdup("0"); // En cas d'erreur d'allocation, retourner "0"
-
-    return ret_str;
+	if (**p == '?')
+	{
+		ret = get_return_value();
+		(*p)++;
+	}
+	else
+	{
+		start = *p;
+		while (**p && (isalnum((unsigned char)**p) || **p == '_'))
+			(*p)++;
+		var_len = *p - start;
+		ret = strndup(start, var_len);
+		if (ret)
+		{
+			val = get_env_var_value(ret);
+			free(ret);
+			ret = strdup(val);
+		}
+	}
+	return (ret);
 }
 
-/*
-** get_env_var_value:
-** Retourne la valeur de la variable d'environnement `var` si elle existe,
-** sinon retourne "" (une chaîne vide).
-*/
-static const char	*get_env_var_value(const char *var)
+static char	*handle_expansion(const char **p, char *new_arg, size_t *len)
 {
-    return get_env_value(g_env_list, var);
+	char	*expanded;
+
+	(*p)++;
+	expanded = expand_variable(p);
+	if (!expanded)
+		return (NULL);
+	new_arg = allocate_and_concat(new_arg, expanded, strlen(expanded), len);
+	free(expanded);
+	return (new_arg);
 }
 
-/*
-** expand_one_argument:
-** Prend un argument, cherche des occurrences de $VAR ou $?.
-** Construit une nouvelle chaîne avec les expansions.
-*/
+static char	*handle_regular_char(const char **p, char *new_arg, size_t *len)
+{
+	new_arg = allocate_and_concat(new_arg, *p, 1, len);
+	if (new_arg)
+		(*p)++;
+	return (new_arg);
+}
+
 static char	*expand_one_argument(const char *arg)
 {
-    char		*new_arg = NULL;
-    const char	*p = arg;
-    size_t		len = 0;
+	const char	*p = arg;
+	char		*new_arg;
+	size_t		len;
 
-    while (*p)
-    {
-        if (*p == '$')
-        {
-            p++;
-            if (*p == '?')
-            {
-                // Expansion de $?
-                char *ret = get_return_value();
-                if (!ret)
-                    ret = strdup("0"); // Fallback en cas d'erreur
-
-                size_t ret_len = strlen(ret);
-                char *tmp = realloc(new_arg, len + ret_len + 1);
-                if (!tmp)
-                {
-                    free(new_arg);
-                    free(ret);
-                    return NULL;
-                }
-                new_arg = tmp;
-                memcpy(new_arg + len, ret, ret_len);
-                len += ret_len;
-                new_arg[len] = '\0';
-                free(ret);
-                p++;
-            }
-            else if (*p != '\0' && (isalnum((unsigned char)*p) || *p == '_'))
-            {
-                // On lit le nom de la variable
-                const char *start = p;
-                while (*p && (isalnum((unsigned char)*p) || *p == '_'))
-                    p++;
-                size_t var_len = p - start;
-                char *var_name = strndup(start, var_len);
-                if (!var_name)
-                {
-                    free(new_arg);
-                    return NULL;
-                }
-                const char *val = get_env_var_value(var_name);
-                free(var_name);
-                size_t val_len = strlen(val);
-                char *tmp = realloc(new_arg, len + val_len + 1);
-                if (!tmp)
-                {
-                    free(new_arg);
-                    return NULL;
-                }
-                new_arg = tmp;
-                memcpy(new_arg + len, val, val_len);
-                len += val_len;
-                new_arg[len] = '\0';
-            }
-            else
-            {
-                // $ suivi d'un caractère non valide, on considère juste '$' comme un char normal
-                char *tmp = realloc(new_arg, len + 2);
-                if (!tmp)
-                {
-                    free(new_arg);
-                    return NULL;
-                }
-                new_arg = tmp;
-                new_arg[len++] = '$';
-                new_arg[len] = '\0';
-                // On ne fait pas avancer p car le caractère suivant est déjà traité
-            }
-        }
-        else
-        {
-            // Caractère normal
-            char *tmp = realloc(new_arg, len + 2);
-            if (!tmp)
-            {
-                free(new_arg);
-                return NULL;
-            }
-            new_arg = tmp;
-            new_arg[len++] = *p;
-            new_arg[len] = '\0';
-            p++;
-        }
-    }
-    if (!new_arg)
-    {
-        // Si on n'a jamais alloué new_arg, alors l'argument était vide
-        new_arg = strdup("");
-    }
-    return new_arg;
+	new_arg = NULL;
+	len = 0;
+	while (*p)
+	{
+		if (*p == '$')
+		{
+			new_arg = handle_expansion(&p, new_arg, &len);
+			if (!new_arg)
+				return (NULL);
+		}
+		else
+		{
+			new_arg = handle_regular_char(&p, new_arg, &len);
+			if (!new_arg)
+				return (NULL);
+		}
+	}
+	if (!new_arg)
+		return (strdup(""));
+	return (new_arg);
 }
 
 void	expand_variables(char **args)
 {
-    int i = 0;
-    char *expanded;
+	int			i;
+	char		*expanded;
 
-    if (!args)
-        return;
-    while (args[i])
-    {
-        expanded = expand_one_argument(args[i]);
-        if (expanded)
-        {
-            free(args[i]);
-            args[i] = expanded;
-        }
-        i++;
-    }
+	if (!args)
+		return ;
+	i = 0;
+	while (args[i])
+	{
+		expanded = expand_one_argument(args[i]);
+		if (expanded)
+		{
+			free(args[i]);
+			args[i] = expanded;
+		}
+		i++;
+	}
 }

@@ -12,67 +12,77 @@
 
 #include "minishell.h"
 
-/* *** Variables Globales *** */
-int g_last_exit_code = 0; // Initialisation à 0
-t_env *g_env_list = NULL; // Initialisation à NULL
+int		g_last_exit_code = 0;
+t_env	*g_env_list = NULL;
 
-int main(int argc, char **argv, char **envp)
+static int	init_shell(char **envp)
 {
-    (void)argc; // Si inutilisé, pour éviter les warnings
-    (void)argv; // Si inutilisé, pour éviter les warnings
+	print_banner();
+	g_env_list = init_env(envp);
+	if (!g_env_list)
+	{
+		fprintf(stderr, "Failed to initialize environment\n");
+		return (1);
+	}
+	return (0);
+}
 
-    char *input;
+static void	process_commands(t_command *commands)
+{
+	t_command	*tmp;
+	int			ret;
 
-    /* Initialiser la liste d'environnement globale */
-    g_env_list = init_env(envp);
-    if (!g_env_list)
-    {
-        fprintf(stderr, "Failed to initialize environment\n");
-        return 1;
-    }
-				print_banner();
-    while (1)
-    {
-        input = readline("myshell> ");
-        if (!input)
-        {
-            printf("exit\n");
-            break;
-        }
+	tmp = commands;
+	while (tmp)
+	{
+		ret = execute_builtin(tmp, &g_env_list);
+		if (ret == -1 && tmp->args[0])
+		{
+			printf("Not a builtin: %s\n", tmp->args[0]);
+			g_last_exit_code = 1;
+		}
+		else
+			g_last_exit_code = ret;
+		tmp = tmp->next;
+	}
+}
 
-        if (*input)
-            add_history(input);
+static void	free_commands(t_command *commands)
+{
+	t_command	*next;
 
-        /* Obtenir une liste de commandes */
-        t_command *commands = parse_input_into_commands(input);
+	while (commands)
+	{
+		next = commands->next;
+		free_command(commands);
+		commands = next;
+	}
+}
 
-        /* Exécution des commandes */
-        t_command *tmp = commands;
-        while (tmp)
-        {
-            int ret = execute_builtin(tmp, &g_env_list);
-            if (ret == -1 && tmp->args[0])
-            {
-                printf("Not a builtin: %s\n", tmp->args[0]);
-                g_last_exit_code = 1; // Simuler un échec
-            }
-            else
-            {
-                g_last_exit_code = ret;
-            }
-            tmp = tmp->next;
-        }
+int	main(int argc, char **argv, char **envp)
+{
+	char		*input;
+	t_command	*commands;
 
-        /* Libération mémoire */
-        while (commands)
-        {
-            t_command *next = commands->next;
-            free_command(commands);
-            commands = next;
-        }
-        free(input);
-    }
-
-    free_env(g_env_list);
-    return 0;
+	(void)argc;
+	(void)argv;
+	if (init_shell(envp) != 0)
+		return (1);
+	while (1)
+	{
+		input = readline("myshell> ");
+		if (!input)
+		{
+			printf("exit\n");
+			break ;
+		}
+		if (*input)
+			add_history(input);
+		commands = parse_input_into_commands(input);
+		process_commands(commands);
+		free_commands(commands);
+		free(input);
+	}
+	free_env(g_env_list);
+	return (0);
 }

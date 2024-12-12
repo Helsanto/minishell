@@ -12,27 +12,26 @@
 
 #include "minishell.h"
 
-t_command	*create_command(char **args)
+static t_command	*initialize_command(int count)
 {
 	t_command	*cmd;
-	int			count;
-	int			i;
 
-	count = 0;
-	if (!args)
-		return (NULL);
-	while (args[count])
-		count++;
 	cmd = malloc(sizeof(t_command));
 	if (!cmd)
 		return (NULL);
-	cmd->argc = count;
 	cmd->args = malloc(sizeof(char *) * (count + 1));
 	if (!cmd->args)
 	{
 		free(cmd);
 		return (NULL);
 	}
+	return (cmd);
+}
+
+static int	copy_arguments(t_command *cmd, char **args, int count)
+{
+	int	i;
+
 	i = 0;
 	while (i < count)
 	{
@@ -43,19 +42,39 @@ t_command	*create_command(char **args)
 				free(cmd->args[i]);
 			free(cmd->args);
 			free(cmd);
-			return (NULL);
+			return (1);
 		}
 		i++;
 	}
 	cmd->args[count] = NULL;
+	return (0);
+}
+
+t_command	*create_command(char **args)
+{
+	t_command	*cmd;
+	int			count;
+
+	if (!args)
+		return (NULL);
+	count = 0;
+	while (args[count])
+		count++;
+	cmd = initialize_command(count);
+	if (!cmd)
+		return (NULL);
+	cmd->argc = count;
+	if (copy_arguments(cmd, args, count) != 0)
+		return (NULL);
 	return (cmd);
 }
+
 void	free_command(t_command *cmd)
 {
-	int i;
+	int	i;
 
 	if (!cmd)
-		return;
+		return ;
 	i = 0;
 	while (cmd->args && cmd->args[i])
 	{
@@ -66,24 +85,25 @@ void	free_command(t_command *cmd)
 	free(cmd);
 }
 
-t_command *parse_input_into_commands(const char *input)
+t_command	*parse_input_into_commands(const char *input)
 {
-    t_command *cmd = malloc(sizeof(t_command));
-    if (!cmd)
-        return NULL;
+	char		**args;
+	t_command	*cmd;
+	int			i;
 
-    char **args = parse_line((char *)input); // Parse la ligne en arguments
-    if (!args)
-    {
-        free(cmd);
-        return NULL;
-    }
-
-    cmd->args = args;
-    cmd->argc = 0;
-    while (args[cmd->argc])
-        cmd->argc++;
-
-    cmd->next = NULL; // Pas de commande suivante dans cette implémentation de base
-    return cmd;
+	args = parse_line((char *)input);
+	if (!args)
+		return (NULL);
+	cmd = create_command(args);
+	if (!cmd)
+	{
+		i = 0;
+		while (args[i])
+			free(args[i++]);
+		free(args);
+		return (NULL);
+	}
+	free(args);
+	cmd->next = NULL;
+	return (cmd);
 }
