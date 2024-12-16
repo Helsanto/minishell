@@ -1,0 +1,69 @@
+Voici une proposition de répartition des tâches en deux grandes parties. L’idée est que l’un se concentre plutôt sur la partie "lecture, parsing et préparation des commandes", tandis que l’autre se focalise davantage sur l’exécution, la gestion des signaux et des redirections. Bien sûr, vous devrez vous synchroniser régulièrement pour assembler vos travaux.
+
+Partie 1 (misael) : Lecture, Parsing et Gestion de l’Environnement
+Gestion du prompt et de la boucle principale
+
+Implémenter la boucle "infinie" qui affiche un prompt, lit l’entrée utilisateur avec readline et gère l’historique (add_history).
+Parsing des lignes de commande
+
+Découper la ligne en tokens (arguments séparés par des espaces, prendre en compte les guillemets simples et doubles).
+Gérer les cas spéciaux :
+Les quotes simples et doubles (ne pas interpréter les métacaractères entre guillemets simples, etc.).
+Les expansions de variables d’environnement ($VAR) et du code de retour ($?).
+Créer une structure de données (par exemple une liste chaînée ou une structure arborescente) pour représenter la ou les commandes ainsi que leurs arguments.
+Gestion des variables d’environnement
+
+Stocker les variables d’environnement dans une structure adaptée (liste chaînée, tableau dynamique, etc.).
+Gérer la mise à jour et la récupération des variables d’environnement.
+Implémentation des builtins
+
+echo (avec l’option -n)
+cd (chemins relatifs/absolus)
+pwd (sans options)
+export (sans options)
+unset (sans options)
+env (sans options)
+exit (sans options)
+(Ces fonctions devront être intégrées ultérieurement au processus général d’exécution mis en place par l’autre partie.)
+
+Interface avec la partie exécution
+
+Fournir à l’autre partie (Partie 2) des données prêtes à être exécutées :
+Une liste structurée des commandes, arguments, redirections, etc.
+Assurer une fonction "intermédiaire" qui donne, pour chaque ligne entrée, l’ensemble des commandes prêtes à l’exécution.
+
+
+
+
+Partie 2 (fabio) : Exécution, Redirections et Gestion des Signaux
+Recherche et exécution des commandes
+À partir des données fournies par la Partie 1 (commandes, arguments), déterminer s’il s’agit d’un builtin ou d’une commande externe.
+Pour les commandes externes :
+Rechercher le binaire dans le PATH.
+Appeler fork, execve, et gérer la wait() pour attendre la fin d’exécution.
+Gestion des pipes
+Implémenter le chaînage de plusieurs commandes via des pipes.
+Rediriger la sortie standard de la première commande vers l’entrée standard de la deuxième, et ainsi de suite.
+Redirections
+Gérer < (redirection d’entrée).
+Gérer > (redirection de sortie).
+Gérer << (heredoc) : lire jusqu’au délimiteur.
+Gérer >> (redirection de sortie en mode append).
+Gestion des signaux (ctrl-C, ctrl-D, ctrl-)
+Implémenter le comportement de ces signaux comme demandé (interrompre l’exécution, afficher un nouveau prompt, ignorer, etc.).
+Maintenir une seule variable globale pour indiquer qu’un signal a été reçu.
+Intégration et retour d’état
+Assurer le retour correct du code d’exécution ($? pour la Partie 1).
+Gérer les erreurs d’exécution et l’affichage de celles-ci (strerror, perror).
+Collaboration et Intégration
+Communication régulière :
+Dès que Partie 1 a une première version du parsing, Partie 2 peut commencer à travailler sur l’exécution avec des données fictives. Ensuite, vous pourrez intégrer les deux ensembles de code.
+
+Interfaces claires :
+Définissez une structure de données précise pour les commandes (arguments, redirections, etc.) que Partie 1 fournira à Partie 2.
+Assurez-vous que Partie 2 informe Partie 1 des codes de retour pour que la substitution de $? fonctionne correctement.
+
+Tests unitaires :
+Chacun peut tester sa partie séparément (Partie 1 peut tester le parsing avec des fonctions de débug, Partie 2 peut tester l’exécution avec des commandes "en dur") avant l’intégration finale.
+
+Avec cette répartition, chacun a un champ d’action bien défini, tout en gardant à l’esprit qu’une bonne communication est essentielle pour que le tout fonctionne harmonieusement à la fin.
